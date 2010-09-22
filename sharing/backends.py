@@ -1,5 +1,12 @@
+from django.contrib.contenttypes.models import ContentType
+
+from sharing.models import UserShare
 
 class SharingBackend(object):
+    """
+    Authentication backend providing row level permissions.
+    """
+
     # Advertise capabilities.
     supports_object_permissions = True
     supports_anonymous_user = True
@@ -11,4 +18,31 @@ class SharingBackend(object):
         return None
 
     def has_perm(self, user_obj, perm, obj=None):
-        return True
+        """
+        Checks wehter or not the given user has the given permission 
+        for the given object. 
+        """
+        # Ignore check without obj.
+        if obj is None:
+            return False
+
+        # Ignore if user is not authenticated .
+        if not user_obj.is_authenticated():
+            return False
+
+        # Resolve permission.
+        try:
+            perm = 'can_%s' % perm.split('.')[-1].split('_')[0]
+        except IndexError:
+            return False
+            
+        # Find shares for user and object content types.
+        content_type = ContentType.objects.get_for_model(obj)
+        share = UserShare.objects.filter(
+            content_type=content_type,
+            object_id=obj.id,
+            user=user_obj,
+        )
+
+        # Return result based on existance of permission.
+        return share.filter(**{perm: True}).exists()

@@ -9,3 +9,10 @@ class GroupShareInline(generic.GenericTabularInline):
 class UserShareInline(generic.GenericTabularInline):
     extra = 1
     model = UserShare
+
+class SharingMixin(object):
+    def has_change_permission(self, request, obj=None):
+        return True
+
+    def has_delete_permission(self, request, obj=None):
+        return False

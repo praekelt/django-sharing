@@ -21,11 +21,17 @@ class GroupShare(Share):
     """
     Group share model associating object permissions with a group.
     """
-    group = models.ForeignKey('auth.Group')
+    group = models.ForeignKey(
+        'auth.Group',
+    )
+
+    # TODO: Until such time as this bug (http://code.djangoproject.com/ticket/12028) 
+    # is resolved we can't guarantee uniqueness.
+    #class Meta:
+    #    unique_together = (('group', 'content_type', 'object_id'),)
     
     def __unicode__(self):
         return '%s share' % self.group
-
 
 class UserShare(Share):
     """
@@ -35,6 +41,11 @@ class UserShare(Share):
         'auth.User',
         limit_choices_to={'is_staff': True,},
     )
+    
+    # TODO: Until such time as this bug (http://code.djangoproject.com/ticket/12028) 
+    # is resolved we can't guarantee uniqueness.
+    #class Meta:
+    #    unique_together = (('user', 'content_type', 'object_id'),)
     
     def __unicode__(self):
         return '%s share' % self.user

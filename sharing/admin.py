@@ -1,5 +1,7 @@
+from django.contrib import admin
 from django.contrib.contenttypes import generic
 
+from sharing import utils
 from sharing.models import GroupShare, UserShare
 
 class GroupShareInline(generic.GenericTabularInline):
@@ -16,10 +18,48 @@ class UserShareInline(generic.GenericTabularInline):
     extra = 1
     model = UserShare
 
-class SharingAdminMixin(object):
+class ShareAdmin(admin.ModelAdmin):
     """
     Mixin class limiting admin content access based on object and user permissions.
     """
+    def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
+        """
+        Get a form Field for a ForeignKey.
+        """
+        db = kwargs.get('using')
+        if db_field.name in self.raw_id_fields:
+            kwargs['widget'] = widgets.ForeignKeyRawIdWidget(db_field.rel, using=db)
+        elif db_field.name in self.radio_fields:
+            kwargs['widget'] = widgets.AdminRadioSelect(attrs={
+                'class': get_ul_class(self.radio_fields[db_field.name]),
+            })
+            kwargs['empty_label'] = db_field.blank and _('None') or None
+        
+        kwargs['queryset'] = utils.limit_queryset_by_permission(
+            qs=db_field.rel.to.objects.all(), 
+            perm=self.opts.app_label + '.view', 
+            user=request.user,
+        )
+        return db_field.formfield(**kwargs)
+    
+    #def formfield_for_manytomany(self, db_field, request=None, **kwargs):
+    #    """
+    #    Get a form Field for a ManyToManyField.
+    #    """
+    #    # If it uses an intermediary model that isn't auto created, don't show
+    #    # a field in admin.
+    #    if not db_field.rel.through._meta.auto_created:
+    #        return None
+    #    db = kwargs.get('using')
+    #
+    #    if db_field.name in self.raw_id_fields:
+    #        kwargs['widget'] = widgets.ManyToManyRawIdWidget(db_field.rel, using=db)
+    #        kwargs['help_text'] = ''
+    #    elif db_field.name in (list(self.filter_vertical) + list(self.filter_horizontal)):
+    #        kwargs['widget'] = widgets.FilteredSelectMultiple(db_field.verbose_name, (db_field.name in self.filter_vertical))
+    #
+    #    return db_field.formfield(**kwargs)
+    
     def has_change_permission(self, request, obj=None):
         """
         Returns True if the given request has permission to change the given
@@ -58,9 +98,8 @@ class SharingAdminMixin(object):
         if request.user.is_superuser:
             return qs
         else:
-            # TODO: There must be a more efficient way to do this, refactor.
-            filtered_object_ids = []
-            for obj in qs:
-                if request.user.has_perm(self.opts.app_label + '.view', obj):
-                    filtered_object_ids.append(obj.id)
-            return qs.filter(id__in=filtered_object_ids)
+            return utils.limit_queryset_by_permission(
+                qs=qs, 
+                perm=self.opts.app_label + '.view', 
+                user=request.user,
+            )

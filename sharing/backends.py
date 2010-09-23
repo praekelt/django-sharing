@@ -19,7 +19,7 @@ class SharingBackend(object):
 
     def has_perm(self, user_obj, perm, obj=None):
         """
-        Checks wehter or not the given user or her groups has the given 
+        Checks whether or not the given user or her groups has the given 
         permission for the given object. 
         """
         # Ignore check without obj.

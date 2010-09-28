@@ -20,8 +20,14 @@ class UserShareInline(generic.GenericTabularInline):
 
 class ShareAdmin(admin.ModelAdmin):
     """
-    Mixin class limiting admin content access based on object and user permissions.
+    Admin class limiting admin content access based on object and user permissions and 
+    providing user and group permission inlines.
     """
+    inlines = [
+        GroupShareInline,
+        UserShareInline,
+    ]
+
     def formfield_for_foreignkey(self, db_field, request=None, **kwargs):
         """
         Get a form Field for a ForeignKey.
@@ -34,31 +40,40 @@ class ShareAdmin(admin.ModelAdmin):
                 'class': get_ul_class(self.radio_fields[db_field.name]),
             })
             kwargs['empty_label'] = db_field.blank and _('None') or None
-        
+       
+        # Limit queryset by permissions.
         kwargs['queryset'] = utils.limit_queryset_by_permission(
             qs=db_field.rel.to.objects.all(), 
             perm=self.opts.app_label + '.view', 
             user=request.user,
         )
+
         return db_field.formfield(**kwargs)
     
-    #def formfield_for_manytomany(self, db_field, request=None, **kwargs):
-    #    """
-    #    Get a form Field for a ManyToManyField.
-    #    """
-    #    # If it uses an intermediary model that isn't auto created, don't show
-    #    # a field in admin.
-    #    if not db_field.rel.through._meta.auto_created:
-    #        return None
-    #    db = kwargs.get('using')
-    #
-    #    if db_field.name in self.raw_id_fields:
-    #        kwargs['widget'] = widgets.ManyToManyRawIdWidget(db_field.rel, using=db)
-    #        kwargs['help_text'] = ''
-    #    elif db_field.name in (list(self.filter_vertical) + list(self.filter_horizontal)):
-    #        kwargs['widget'] = widgets.FilteredSelectMultiple(db_field.verbose_name, (db_field.name in self.filter_vertical))
-    #
-    #    return db_field.formfield(**kwargs)
+    def formfield_for_manytomany(self, db_field, request=None, **kwargs):
+        """
+        Get a form Field for a ManyToManyField.
+        """
+        # If it uses an intermediary model that isn't auto created, don't show
+        # a field in admin.
+        if not db_field.rel.through._meta.auto_created:
+            return None
+        db = kwargs.get('using')
+    
+        if db_field.name in self.raw_id_fields:
+            kwargs['widget'] = widgets.ManyToManyRawIdWidget(db_field.rel, using=db)
+            kwargs['help_text'] = ''
+        elif db_field.name in (list(self.filter_vertical) + list(self.filter_horizontal)):
+            kwargs['widget'] = widgets.FilteredSelectMultiple(db_field.verbose_name, (db_field.name in self.filter_vertical))
+   
+        # Limit queryset by permissions.
+        kwargs['queryset'] = utils.limit_queryset_by_permission(
+            qs=db_field.rel.to.objects.all(), 
+            perm=self.opts.app_label + '.view', 
+            user=request.user,
+        )
+
+        return db_field.formfield(**kwargs)
     
     def has_change_permission(self, request, obj=None):
         """

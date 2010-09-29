@@ -1,5 +1,7 @@
 from django.contrib import admin
+from django.contrib.admin import widgets
 from django.contrib.contenttypes import generic
+from django.contrib.contenttypes.models import ContentType
 
 from sharing import utils
 from sharing.models import GroupShare, UserShare
@@ -18,7 +20,7 @@ class UserShareInline(generic.GenericTabularInline):
     extra = 1
     model = UserShare
 
-class ShareAdmin(admin.ModelAdmin):
+class ShareAdminMixin(object):
     """
     Admin class limiting admin content access based on object and user permissions and 
     providing user and group permission inlines.
@@ -117,4 +119,27 @@ class ShareAdmin(admin.ModelAdmin):
                 qs=qs, 
                 perm=self.opts.app_label + '.view', 
                 user=request.user,
+            )
+    
+    def save_model(self, request, obj, form, change):
+        """
+        On admin save create full share for requesting user.
+        """
+        super(ShareAdmin, self).save_model(request, obj, form, change)
+        
+        # Setup full share if it does not already exist.
+        try:
+            UserShare.objects.get(
+                user=request.user,
+                content_type=ContentType.objects.get_for_model(obj),
+                object_id=obj.id,
+            )
+        except UserShare.DoesNotExist:
+            UserShare.objects.create(
+                user=request.user,
+                can_view=True,
+                can_change=True,
+                can_delete=True,
+                content_type=ContentType.objects.get_for_model(obj),
+                object_id=obj.id,
             )

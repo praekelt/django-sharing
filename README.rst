@@ -47,3 +47,5 @@ Alternatively you can automatically enable sharing for all models registered wit
     urlpatterns = patterns('',
         (r'^admin/', include(admin.site.urls)),
     )
+
+Once the ``ShareAdminMixin`` class has been applied your admin change views should include ``Group`` and ``User`` share inlines. 

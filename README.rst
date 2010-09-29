@@ -14,7 +14,7 @@ Installation
 ------------
 
 #. Install or add django-sharing to your python path.
-#. Add ``sharing`` to the project's ``INSTALLED_APPS`` setting.
+#. Add ``'sharing'`` to the project's ``INSTALLED_APPS`` setting.
 #. Add ``'sharing.backends.SharingBackend'`` to the project's ``AUTHENTICATION_BACKENDS`` setting.
 
 Usage
@@ -48,4 +48,4 @@ Alternatively you can automatically enable sharing for all models registered wit
         (r'^admin/', include(admin.site.urls)),
     )
 
-Once the ``ShareAdminMixin`` class has been applied your admin change views should include ``Group`` and ``User`` share inlines. 
+Once the ``ShareAdminMixin`` class has been applied your admin change views should include ``Group`` and ``User`` share inlines and restrict content appropriately. 

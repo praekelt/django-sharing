@@ -48,4 +48,5 @@ Alternatively you can automatically enable sharing for all models registered wit
         (r'^admin/', include(admin.site.urls)),
     )
 
-Once the ``ShareAdminMixin`` class has been applied your admin change views should include ``Group`` and ``User`` share inlines and restrict content appropriately. 
+Once the ``ShareAdminMixin`` class has been applied your admin change views should include ``Group`` and ``User`` share inlines and restrict content appropriately.
+

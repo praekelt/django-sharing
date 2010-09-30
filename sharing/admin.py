@@ -125,7 +125,7 @@ class ShareAdminMixin(object):
         """
         On admin save create full share for requesting user.
         """
-        super(ShareAdmin, self).save_model(request, obj, form, change)
+        super(ShareAdminMixin, self).save_model(request, obj, form, change)
         
         # Setup full share if it does not already exist.
         try:
